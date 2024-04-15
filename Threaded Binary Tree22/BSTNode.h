@@ -18,11 +18,11 @@ class BSTNode : public BinNode<E> {
 private:
   Key k;                  // The node's key
   E it;                   // The node's value
-  BSTNode* lc;            // Pointer to left child
-  BSTNode* rc;            // Pointer to right child
+  BSTNode* lc;            // predessor or left child
+  BSTNode* rc;            // successor or right child
 
-  BSTNode* successor;	  // Pointer to node's successor
-  BSTNode* predessor;	  // Pointer to node's predessor (this is the sole purpose of a DOUBLE threaded binary tree)
+  char L_isChild;	  // Left
+  char R_isChild;	  // Right
 
 
 public:
@@ -34,7 +34,9 @@ public:
 	  k = K;
 	  it = e;
 	  lc = l;
-	  rc = r; }
+	  rc = r;
+	  L_isChild = R_isChild = 0;
+  }
   ~BSTNode() {}             // Destructor
 
   // Functions to set and return the value and key
@@ -67,7 +69,22 @@ public:
 
   // Return true if it is a leaf, false otherwise
   bool isLeaf() {
-	  return !((int)lc | (int)rc); //cleaned this up a little bit
+	  return !(L_isChild | R_isChild);
+  }
+
+  // Additional getters and setters
+  int leftIsChild() const {
+	  return L_isChild;
+  }
+
+  int rightIsChild() const {
+	  return R_isChild;
+  }
+  void setLeftIsChild(char a) {
+	  L_isChild = a;
+  }
+  void setRightIsChild(char a) {
+	  R_isChild = a;
   }
 };
 

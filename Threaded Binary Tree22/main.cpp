@@ -25,8 +25,14 @@ int main() {
 	myBST.insert(85, "eighty-five");
 	myBST.insert(83, "eighty-three");
 	myBST.insert(87, "eighty-seven");
-	myBST.insert(65, "sixty - five");
+	myBST.insert(65, "sixty-five");
 	myBST.print();
+
+
+	//for (int i = 0; i < myBST.size(); i++) {
+	//	sayl(myBST.root[i].element());
+	//}
+	
 
 	
 	return 0;

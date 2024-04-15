@@ -23,12 +23,12 @@ template <typename Key, typename E>
 class BST : public Dictionary<Key,E> {
 private:
 
-  BSTNode<Key,E>* root;   // Root of the BST
+  BSTNode<Key, E>* root;   // Root of the BST <-- This is NOOOTT an array
   int nodecount;         // Number of nodes in the BST
 
   // Private "helper" functions
   void clearhelp(BSTNode<Key, E>*);
-  BSTNode<Key,E>* inserthelp(BSTNode<Key, E>*, const Key&, const E&);
+  void inserthelp(const Key&, const E&);
   BSTNode<Key,E>* deletemin(BSTNode<Key, E>*);
   BSTNode<Key,E>* getmin(BSTNode<Key, E>*);
   BSTNode<Key,E>* removehelp(BSTNode<Key, E>*, const Key&);
@@ -61,8 +61,8 @@ public:
   // k Key value of the record.
   // e The record to insert.
   void insert(const Key& k, const E& e) {
-    root = inserthelp(root, k, e);
-    nodecount++;
+      inserthelp(k, e);
+      nodecount++;
   }
 
   // Remove a record from the tree.
@@ -94,10 +94,76 @@ public:
   // Return some record matching "k".
   // Return true if such exists, false otherwise. If
   // multiple records match "k", return an arbitrary one.
-  E* find(const Key& k) const { return findhelp(root, k); }
+  E* find(const Key& k) const {
+      return findhelp(root, k);
+  }
+
+  BSTNode<Key, E>* findPredessor(const Key& k) {
+      int key = (int)k;
+      if (root == NULL) {
+          return NULL;
+      }
+      BSTNode<Key, E>* predessor = root;
+      while (1) {
+          if (predessor->key() > key) { //if current node is greater
+              if (predessor->leftIsChild()) { //go to the left
+                  predessor = predessor->left();
+              }
+              else {
+                  return predessor;
+              }
+          }
+          else { //else the node is smaller
+              if (predessor->rightIsChild()) {
+                  predessor = predessor->right();
+              }
+              else {
+                  return predessor;
+              }
+          }
+      }
+ }
+
+  BSTNode<Key, E>* findSuccessor(const Key& k) {
+      int key = (int)k;
+      if (root == NULL) {
+          return NULL; //tree doesnt exist, so terminate
+      }
+      BSTNode<Key, E>* successor = root;
+      while (1) {
+          if (successor->key() > key) {
+              if (successor->leftIsChild()) {
+                  if (successor->left()->key() != key) {
+                      successor = successor->left();
+                  }
+                  else {
+                      return successor;
+                  }
+              }
+              else {
+                  return successor;
+              }
+          }
+          else {
+              if (successor->rightIsChild()) {
+                  if (successor->right()->key() != key) {
+                      successor = successor->right();
+                  }
+                  else {
+                      return successor;
+                  }
+              }
+              else {
+                  return successor;
+              }
+          }
+      }
+  }
 
   // Return the number of records in the dictionary.
-  int size() { return nodecount; }
+  int size() {
+      return nodecount;
+  }
 
   // Print the contents of the BST
   void print() const {
@@ -125,14 +191,44 @@ void BST<Key, E>::clearhelp(BSTNode<Key, E>* root) {
 }
 
 // Insert a node into the BST, returning the updated tree
+
 template <typename Key, typename E>
-BSTNode<Key, E>* BST<Key, E>::inserthelp(BSTNode<Key, E>* root, const Key& k, const E& it) {
-  if (root == NULL)  // Empty tree: create node
-    return new BSTNode<Key, E>(k, it, NULL, NULL);
-  if (k < root->key())
-    root->setLeft(inserthelp(root->left(), k, it));
-  else root->setRight(inserthelp(root->right(), k, it));
-  return root;       // Return tree with node inserted
+
+void BST<Key, E>::inserthelp(const Key& k, const E& it) {
+
+    if (root == NULL) { //the case where nothing exists
+        root = new BSTNode<Key, E>(k, it, NULL, NULL);
+        return;
+    }
+
+    BSTNode<Key, E>* currentNode = root;
+    BSTNode<Key, E>* newNode = new BSTNode<Key, E>(k, it, NULL, NULL);
+    while (1) {
+
+        if (k < currentNode->key()) { //go left
+            if (!currentNode->leftIsChild()) { //see if we're at a leaf
+                newNode->setRight(findSuccessor(newNode->key()));
+
+                currentNode->setLeft(newNode);
+                currentNode->setLeftIsChild(1);
+                return;
+            }
+            else { //otherwise we keep going
+                currentNode = currentNode->left();
+            }
+        }
+        else { //go right
+            if (!currentNode->rightIsChild()) { //see if we're at a leaf
+                newNode->setLeft(findSuccessor(newNode->key()));
+                currentNode->setRight(newNode);
+                currentNode->setRightIsChild(1);
+                return;
+            }
+            else { //otherwise keep going
+                currentNode = currentNode->right();
+            }
+        }
+    }
 }
 
 // Delete the minimum value from the BST, returning the revised BST
@@ -205,15 +301,30 @@ E* BST<Key, E>::findhelp(BSTNode<Key, E>* root,
 template <typename Key, typename E>
 void BST<Key, E>::printhelp(BSTNode<Key, E>* root, int level) const {
   if (root == NULL) return;           // Empty tree
-  printhelp(root->left(), level+1);   // Do left subtree
+  if (root->leftIsChild()) {
+      printhelp(root->left(), level + 1);
+  }
 
+  
   char spacer[] = "       ";
   spacer[level] = '\0';
   say(spacer);
-  say("-Tree ");
+  say("-");
   say(root->key());
   say(" ");
-  sayl(root->element());
+  say(root->element());
+  if (root->isLeaf()) {
+      say(" (leaf)");
+      if (root->left() != NULL) {
+          say(" predessor is ");
+          say(root->left()->key());
+      }
+      if (root->right() != NULL) {
+          say(" successor is ");
+          say(root->right()->key());
+      }
+  }
+  say("\n");
 
   /* //I don't know what this is
   for (int i = 0; i < level; i++) {   // Indent to level
@@ -221,7 +332,9 @@ void BST<Key, E>::printhelp(BSTNode<Key, E>* root, int level) const {
       cout << root->key() << "\n";        // Print node value
   }
   */
-  printhelp(root->right(), level+1);  // Do right subtree
+  if (root->rightIsChild()) {
+      printhelp(root->right(), level + 1);  // Do right subtree
+  }
 }
 
 #endif
