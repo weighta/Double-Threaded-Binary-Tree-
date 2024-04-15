@@ -71,6 +71,9 @@ public:
   bool isLeaf() {
 	  return !(L_isChild | R_isChild);
   }
+  bool isMaxed() {
+	  return L_isChild & R_isChild;
+  }
 
   // Additional getters and setters
   int leftIsChild() const {

@@ -26,6 +26,7 @@ int main() {
 	myBST.insert(83, "eighty-three");
 	myBST.insert(87, "eighty-seven");
 	myBST.insert(65, "sixty-five");
+	myBST.preds();
 	myBST.print();
 
 
