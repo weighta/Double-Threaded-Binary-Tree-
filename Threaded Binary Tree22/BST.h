@@ -26,9 +26,11 @@ private:
   BSTNode<Key, E>* root;   // Root of the BST <-- This is NOOOTT an array
   int nodecount;         // Number of nodes in the BST
 
+  //------  My functions
   BSTNode<Key, E>* findPredessor(const Key& k);
   BSTNode<Key, E>* findSuccessor(const Key& k);
   void threads(BSTNode<Key, E>* root);
+  //------
 
   // Private "helper" functions
   void clearhelp(BSTNode<Key, E>*);
@@ -46,11 +48,11 @@ public:
   BST() { // Constructor
       root = NULL;
       nodecount = 0;
-  }   // Constructor with arguments
-  BST(const Key& k, const E& e) {
-      root = NULL;
-      nodecount = 0;
-      insert(k, e);
+  }   
+  BST(const Key& k, const E& e) { // Constructor with arguments, just allows flexability really
+      root = NULL; //set root to NULL for helpful terminating conditionals later
+      nodecount = 0; //set nodecount to 0; I think this came back as junk once in memory without inizialiting 0 and the for loop was buggy later
+      insert(k, e); //perform the first insert
   }
   
   //Note from Prof Sipantzi -- I've commented out the destructor
@@ -58,6 +60,9 @@ public:
   //doubly-threaded trees and that is not part of the assignment.
   //~BST() { clearhelp(root); }            // Destructor
 
+  /// <summary>
+  /// I don't think we got around to this...
+  /// </summary>
   void clear() {
       clearhelp(root);
       root = NULL;
@@ -68,8 +73,8 @@ public:
   // k Key value of the record.
   // e The record to insert.
   void insert(const Key& k, const E& e) {
-      inserthelp(k, e);
-      nodecount++;
+      inserthelp(k, e); // insert the record by reference
+      nodecount++; //increment the node count
   }
 
   // Remove a record from the tree.
@@ -105,24 +110,33 @@ public:
       return findhelp(root, k);
   }
 
+
+
   // Return the number of records in the dictionary.
   int size() {
       return nodecount;
   }
 
-  // Print the contents of the BST
+  // Print the Tree of the BST in order with recurssion
   void print() {
-      if (root == NULL) {
+      if (root == NULL) { //why bother-- if it's empty!
           sayl("The BST is empty.\n");
       }
       else {
-          threads(root);
-          printhelp();
+          /// <summary>
+          /// Realistically, threads doesnt *need* called here, it just saves cpu vs doing it live in the insert()
+          /// </summary>
+          threads(root); //do the threads first on the double-tree
+          printhelp(); //then print
       }
   }
 
-  // Print the contents of the BST in order without recurssion
-  void printInOrder();
+
+  void printInOrder(char);     // Print the BST in order withOUT recurssion
+  void printInOrder();  //Overload provides a little lee-way to save the (char) declaration; default is 0 for NOT-REVERSED
+  void printReverse();   // Print the contents of the BST in reverse (no recurssion)
+
+
 };
 // Visit -- prints out root
 
@@ -139,39 +153,41 @@ void BST<Key, E>::clearhelp(BSTNode<Key, E>* root) {
   clearhelp(root->right());
   delete root;
 }
-// Insert a node into the BST, returning the updated tree
 
+
+// Insert a node into the BST, return void; no use of recursion
 template <typename Key, typename E>
 void BST<Key, E>::inserthelp(const Key& k, const E& it) {
 
+    /// <summary>
+    /// Okay, six hours later here we are
+    /// </summary>
+
     if (root == NULL) { //the case where nothing exists
-        root = new BSTNode<Key, E>(k, it, NULL, NULL);
+        root = new BSTNode<Key, E>(k, it, NULL, NULL); //this will be the start of things, it will only execute 1 time for initial stem
         return;
     }
 
-    BSTNode<Key, E>* currentNode = root;
-    BSTNode<Key, E>* newNode = new BSTNode<Key, E>(k, it, NULL, NULL);
-    char nodeNotPlanted = 1;
-    while (nodeNotPlanted) {
+    BSTNode<Key, E>* currentNode = root; //the current node will keep track of where we are during the insert
+    BSTNode<Key, E>* newNode = new BSTNode<Key, E>(k, it, NULL, NULL); //this is our ACTUAL node to insert ahead of time
+    while (1) { //we're looking to just solve where the node will insert at
+        //just create a while loop, once a leaf is found, the node is inserted left or right, break
 
-        if (k < currentNode->key()) { //go left
+        if (k < currentNode->key()) { //go left since key is less than current node
             if (!currentNode->leftIsChild()) { //see if we're at a leaf
-                //newNode->setRight(findSuccessor(newNode->key()));
-
-                currentNode->setLeft(newNode);
-                currentNode->setLeftIsChild(1);
-                nodeNotPlanted = 0;
+                currentNode->setLeft(newNode); //if we are, then place the node here
+                currentNode->setLeftIsChild(1); //MAKE SURE the node recognizes that this is NO LONGER a thread, but a real child!
+                return;
             }
             else { //otherwise we keep going
                 currentNode = currentNode->left();
             }
         }
-        else { //go right
+        else { //go right if the key is larger than current node
             if (!currentNode->rightIsChild()) { //see if we're at a leaf
-                //newNode->setLeft(findSuccessor(newNode->key()));
-                currentNode->setRight(newNode);
+                currentNode->setRight(newNode); 
                 currentNode->setRightIsChild(1);
-                nodeNotPlanted = 0;
+                return;
             }
             else { //otherwise keep going
                 currentNode = currentNode->right();
@@ -183,9 +199,9 @@ void BST<Key, E>::inserthelp(const Key& k, const E& it) {
 
 template <typename Key, typename E>
 BSTNode<Key, E>* BST<Key, E>::getmin(BSTNode<Key, E>* rt) {
-  if (!rt->leftIsChild()) //jz
+  if (!rt->leftIsChild()) //jump if not zero
     return rt;
-  else return getmin(rt->left());
+  else return getmin(rt->left()); //recursive call
 }
 
 template <typename Key, typename E>
@@ -245,170 +261,204 @@ E* BST<Key, E>::findhelp(BSTNode<Key, E>* root, const Key& k) const {
   }
 }
 
+
+// Finds the predessor of a node in the BST
 template <typename Key, typename E>
 BSTNode<Key, E>* BST<Key, E>::findPredessor(const Key& k) {
-    int key = (int)k;
+
+    /// <summary>
+    /// Alright here's the predessor, a bit messy on ifs, but it's good
+    /// </summary>
+
     if (root == NULL) {
-        return NULL;
+        return NULL; //we'll just stop what we're doing if the root isnt established
     }
-    BSTNode<Key, E>* currentNode = root;
-    BSTNode<Key, E>* predessor = NULL;
+    BSTNode<Key, E>* currentNode = root; //The current node during the 'search' - very important
+    BSTNode<Key, E>* predessor = NULL; //The actual predessor to return, this will fluctuate a bit
     while (1) {
-        if (currentNode->key() > key) { //if current node is greater
-            if (currentNode->leftIsChild()) { //go to the left
-                if (currentNode->key() < key) {
-                    predessor = currentNode;
+        //Another grueling task, but it's not so bad
+        //the predessor is just the largest possible number smaller than the current node's key
+
+        if (currentNode->key() > k) { //if current node is greater
+            if (currentNode->leftIsChild()) { //go to the left to shrink our findings
+                if (currentNode->key() < k) { //is the node less than key size
+                    predessor = currentNode; //if so, that's our candidate predessor
                 }
-                currentNode = currentNode->left();
+                currentNode = currentNode->left(); //otherwise, keep shrinking
             }
             else {
-                return predessor;
+                return predessor; //return predessor if the current node's left is not a child, therefor it's the largest/smallest
             }
         }
         else { //else the node is smaller
-            if (currentNode->rightIsChild()) {
-                if (currentNode->key() < key) {
-                    predessor = currentNode;
+            if (currentNode->rightIsChild()) { // so we need to check if right is a child first
+                if (currentNode->key() < k) { // that way well also check to see if the key is still LARGER than the node's key in question
+                    predessor = currentNode; //and if so, candidate predessor found
                 }
-                currentNode = currentNode->right();
+                currentNode = currentNode->right(); //keep going
             }
             else {
-                return predessor;
+                return predessor; //return predessor if no more childs found to the right to keep making the predessor as large as it can
             }
         }
     }
 }
 
+// Finds the successor of a node in the BST
 template <typename Key, typename E>
 BSTNode<Key, E>* BST<Key, E>::findSuccessor(const Key& k) {
-    int key = (int)k;
+
+    /// <summary>
+    /// Successor is similar to finding predessor, just a couple tweaks
+    /// </summary>
+
     if (root == NULL) {
         return NULL; //tree doesnt exist, so terminate
     }
 
-    BSTNode<Key, E>* currentNode = root;
-    BSTNode<Key, E>* successor = NULL;
+    BSTNode<Key, E>* currentNode = root; //Similarly, create a current node for searching for the successor
+    BSTNode<Key, E>* successor = NULL; //then we can have ourselves the real-time candadite successor
     while (1) {
-        if (currentNode->key() > key) {
-            if (currentNode->leftIsChild()) {
-                if (currentNode->key() > key) {
-                    successor = currentNode;
+        //like solving for predessor without recursion, we can use a while loop to solve successor
+
+        if (currentNode->key() > k) { //make sure the node is still larger than the key
+            if (currentNode->leftIsChild()) { //make sure a left child exists first
+                if (currentNode->key() > k) { //then make sure the node is *still* larger
+                    successor = currentNode; //if the key is still smaller than the node's, it's a candadite successor
                 }
-                currentNode = currentNode->left();
+                currentNode = currentNode->left(); //keep going left to shrink the successor as much as possible
             }
             else {
-                return successor;
+                return successor; //if no more left childs, we found the successor
             }
         }
-        else {
-            if (currentNode->rightIsChild()) {
-                if (currentNode->key() > key) {
-                    successor = currentNode;
+        else { //if it isnt, we need to go to the right to increase it so
+            if (currentNode->rightIsChild()) { //but make sure a right child exists first
+                if (currentNode->key() > k) { //and if it does, tripple-check to make sure the current node's key is larger
+                    successor = currentNode; //it is, so here's our candidate successor
                 }
-                currentNode = currentNode->right();
+                currentNode = currentNode->right(); //keep going to the right
             }
             else {
-                return successor;
+                return successor; //if no more right childs exist, we found it
             }
         }
     }
 }
 
+// Maps the threads with finding successors and predessors using recursion
 template <typename Key, typename E>
 void BST<Key, E>::threads(BSTNode<Key, E>* root) {
+    //we need to assign each node a thread if possible
+    //possible meaning we are at the end of each node, and it does not have any more children
     if (root->leftIsChild()) {
-        threads(root->left());
+        threads(root->left()); //keep going
     }
     if (root->rightIsChild()) {
-        threads(root->right());
+        threads(root->right()); //keep going
     }
     if (!root->leftIsChild()) {
-        root->setLeft(findPredessor(root->key()));
+        root->setLeft(findPredessor(root->key())); //there we are, find its predessor
     }
     if (!root->rightIsChild()) {
-        root->setRight(findSuccessor(root->key()));
+        root->setRight(findSuccessor(root->key())); //find successor
     }
 }
 
 // Print out a BST (with recursion)
 template <typename Key, typename E>
 void BST<Key, E>::printhelp(BSTNode<Key, E>* root, int level) const {
-    if (root == NULL) return;           // Empty tree
-    if (root->leftIsChild()) {
-        printhelp(root->left(), level + 1);
+    if (root == NULL) return; // Empty tree, so leave it
+    if (root->leftIsChild()) { //start with minimum value
+        printhelp(root->left(), level + 2); //increase level by 2 so that indent works
     }
-    char spacer[] = "       ";
-    spacer[level] = '\0';
+    char spacer[0xFF]; //this will be the space array ' '
+    memset(spacer, 0x20, 0xFF); //dramatic, just a fast way of setting the space array
+    spacer[level] = '\0'; //null-terminated position for the spacer
+    //------ setting up the scene
     say(spacer);
     say("-");
     say(root->key());
     say(" ");
     say(root->element());
-    if (root->isLeaf()) {
-        say(" (leaf)");
-    }
-    if (root->key() == 90) {
-        int a = 0;
+    //------
+    if (root->isLeaf()) { //This is helpful
+        say(" (leaf)"); //, will say if the node is a leaf or not
     }
     if (root->left() != NULL) {
-        if (!root->leftIsChild()) {
-            say(" predessor is ");
+        if (!root->leftIsChild()) { //if not a child
+            say(" predessor is "); //then we can view it's predessor! cool.
             say(root->left()->key());
         }
     }
     if (root->right() != NULL) {
-        if (!root->rightIsChild()) {
+        if (!root->rightIsChild()) { //same with the successor if applicable
             say(" successor is ");
             say(root->right()->key());
         }
     }
     say("\n");
-    /* //I don't know what this is
-    for (int i = 0; i < level; i++) {   // Indent to level
-        cout << "  ";
-        cout << root->key() << "\n";        // Print node value
-    }
-    */
     if (root->rightIsChild()) {
-        printhelp(root->right(), level + 1);  // Do right subtree
+        printhelp(root->right(), level + 2);  // Do right subtree after the left and displaying the middle node
     }
 }
+
+// Overload for printhelp just to simplify no int level input
 template <typename Key, typename E>
 void BST<Key, E>::printhelp() const {
-    printhelp(root, 0);
+    printhelp(root, 0); //0 means it will not print reversed
 }
 //Print out a BST (no recursion)
 template<typename Key, typename E>
-void BST<Key, E>::printInOrder() {
-    int i = 0;
-    BSTNode<Key, E>* nodesInOrder[16];
-    BSTNode<Key, E>* currentNode = getmin(root);
-    //nodesInOrder[i++] = currentNode;
+void BST<Key, E>::printInOrder(char reversed) {
+    int i = 0; //declar an indexer for future traversal
+    BSTNode<Key, E>* nodesInOrder[0xFF]; //Okay, logistically speaking, this isn't good, I just did it to save heap,
+                                        //it's only 2,040 bytes of memory so no big deal
+                                        //declare a pointer array so save the nodes in order thanks to their neighboring successors/predessors
+    BSTNode<Key, E>* currentNode = getmin(root); //start at the left of the tree
 
-    while (i < nodecount) {
-        if (currentNode->rightIsChild()) {
-            if (!currentNode->leftIsChild()) {
-                nodesInOrder[i++] = currentNode;
+    while (i < nodecount) { //make sure we hit all nodecount nodes
+        if (currentNode->rightIsChild()) { //start by seeing if right is child
+            if (!currentNode->leftIsChild()) { //if so, make sure left is not child
+                nodesInOrder[i++] = currentNode; //now we can save this node
             }
-            currentNode = currentNode->right();
-            while (currentNode->leftIsChild()) {
-                currentNode = currentNode->left();
+            currentNode = currentNode->right(); //...and move on!
+            while (currentNode->leftIsChild()) { //if the left happens to be a child
+                currentNode = currentNode->left(); //then keep going left
             }
         }
-        else {
-            nodesInOrder[i++] = currentNode;
-            if (currentNode->right() != NULL) {
-                if (!currentNode->rightIsChild()) {
-                    currentNode = currentNode->right();
-                    nodesInOrder[i++] = currentNode;
+        else { //if the node has no right child, 
+            nodesInOrder[i++] = currentNode; //then immediately save the node
+            if (currentNode->right() != NULL) { //ensure we aren't at the end, yet...
+                if (!currentNode->rightIsChild()) { //check if the right is NOT a child
+                    currentNode = currentNode->right(); //then jump to its successor
+                    nodesInOrder[i++] = currentNode; //save the successor
                 }
             }
         }
     }
 
-    for (int j = 0; j < nodecount; j++) {
-        sayl(nodesInOrder[j]->element())
+    //easy part, reminds me of the c# days
+    if (reversed) { //if reversed, print backwards
+        for (int j = nodecount - 1; j >= 0; j--) {
+            sayl(nodesInOrder[j]->element());
+        }
     }
+    else { //otherwise print forwards
+        for (int j = 0; j < nodecount; j++) {
+            sayl(nodesInOrder[j]->element());
+        }
+    }
+}
+
+template <typename Key, typename E>
+void BST<Key, E>::printReverse() {
+    printInOrder(1);
+}
+
+template <typename Key, typename E>
+void BST<Key, E>::printInOrder() {
+    printInOrder(0);
 }
 
 

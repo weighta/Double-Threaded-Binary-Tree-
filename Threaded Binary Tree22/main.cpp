@@ -1,19 +1,20 @@
+/// Alexander P. Weight
+/// Professor Jason Christian
+/// CSIS215: Algorithms and Data Structures
+/// April 15, 2024
+
 #include <iostream>
 #include "BST.h"
 
-
-class Test {
-private:
-	int h = 0;
-public:
-	Test(int poop, int foo =NULL) {
-		h = foo;
-		int fart = 0;
-	}
-};
-
 int main() {
-	BST<int, string> myBST(77, "seventy-seven");
+
+	//Here where all the tests begin: I think they're pretty self-explanatory
+	//P.S the macros.h file contains sayl definition
+
+	sayl("Alexander Weight -- CSIS 215 Programming Assignment 2 -- Double Threaded Binary Tree\n");
+	sayl("Initializing BST constructor");
+	BST<int, string> myBST(77, "seventy-seven"); //The constructor was optional, I just did it for fun
+	sayl("Inserting nodes to BST");
 	myBST.insert(70, "seventy");
 	myBST.insert(75, "seventy-five");
 	myBST.insert(66, "sixty-six");
@@ -26,16 +27,13 @@ int main() {
 	myBST.insert(83, "eighty-three");
 	myBST.insert(87, "eighty-seven");
 	myBST.insert(65, "sixty-five");
+	sayl("Printing tree...\n");
 	myBST.print();
-
+	sayl("\nTree finished");
+	sayl("Testing printing in order without recurssion...\n")
 	myBST.printInOrder();
+	sayl("\nPrint in order finished, now printing reversed...\n");
+	myBST.printReverse();
 
-
-	//for (int i = 0; i < myBST.size(); i++) {
-	//	sayl(myBST.root[i].element());
-	//}
-	
-
-	
 	return 0;
 }
