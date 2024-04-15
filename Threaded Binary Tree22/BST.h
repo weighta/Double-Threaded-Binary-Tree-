@@ -26,92 +26,9 @@ private:
   BSTNode<Key, E>* root;   // Root of the BST <-- This is NOOOTT an array
   int nodecount;         // Number of nodes in the BST
 
-  BSTNode<Key, E>* findPredessor(const Key& k) {
-
-      int key = (int)k;
-      if (root == NULL) {
-          return NULL;
-      }
-      BSTNode<Key, E>* currentNode = root;
-      BSTNode<Key, E>* predessor = NULL;
-      while (1) {
-          if (currentNode->key() > key) { //if current node is greater
-              if (currentNode->leftIsChild()) { //go to the left
-                  if (currentNode->key() < key) {
-                      predessor = currentNode;
-                  }
-                  currentNode = currentNode->left();
-              }
-              else {
-                  return predessor;
-              }
-          }
-          else { //else the node is smaller
-              if (currentNode->rightIsChild()) {
-                  if (currentNode->key() < key) {
-                      predessor = currentNode;
-                  }
-                  currentNode = currentNode->right();
-              }
-              else {
-                  return predessor;
-              }
-          }
-      }
-  }
-  BSTNode<Key, E>* findSuccessor(const Key& k) {
-      int key = (int)k;
-      if (root == NULL) {
-          return NULL; //tree doesnt exist, so terminate
-      }
-
-      BSTNode<Key, E>* currentNode = root;
-      BSTNode<Key, E>* successor = NULL;
-      while (1) {
-          if (currentNode->key() > key) {
-              if (currentNode->leftIsChild()) {
-                  if (currentNode->key() > key) {
-                      successor = currentNode;
-                  }
-                  currentNode = currentNode->left();
-              }
-              else {
-                  return successor;
-              }
-          }
-          else {
-              if (currentNode->rightIsChild()) {
-                  if (currentNode->key() > key) {
-                      successor = currentNode;
-                  }
-                  currentNode = currentNode->right();
-              }
-              else {
-                  return successor;
-              }
-          }
-      }
-  }
-
-
-  void predsAndSuccs(BSTNode<Key, E>* root) {
-      if (root->leftIsChild()) {
-          predsAndSuccs(root->left());
-      }
-      if (root->rightIsChild()) {
-          predsAndSuccs(root->right());
-      }
-      if ((int)root->key() == 79) {
-          int b = 0;
-      }
-      if (!root->leftIsChild()) {
-          root->setLeft(findPredessor(root->key()));
-      }
-      if (!root->rightIsChild()) {
-          root->setRight(findSuccessor(root->key()));
-      }
-      int a = 0;
-  }
+  BSTNode<Key, E>* findPredessor(const Key& k);
+  BSTNode<Key, E>* findSuccessor(const Key& k);
+  void threads(BSTNode<Key, E>* root);
 
   // Private "helper" functions
   void clearhelp(BSTNode<Key, E>*);
@@ -121,15 +38,18 @@ private:
   BSTNode<Key,E>* removehelp(BSTNode<Key, E>*, const Key&);
   E* findhelp(BSTNode<Key, E>*, const Key&) const;
   void printhelp(BSTNode<Key, E>*, int) const;
+  void printhelp() const;
   void vist(BSTNode<Key, E>*) const;
 
 public:
 
-  BST() {
+  BST() { // Constructor
       root = NULL;
       nodecount = 0;
-  }  // Constructor
+  }   // Constructor with arguments
   BST(const Key& k, const E& e) {
+      root = NULL;
+      nodecount = 0;
       insert(k, e);
   }
   
@@ -190,27 +110,28 @@ public:
       return nodecount;
   }
 
-  void preds() {
-      predsAndSuccs(root);
-  }
-
   // Print the contents of the BST
-  void print() const {
-    if (root == NULL) cout << "The BST is empty.\n";
-    else printhelp(root, 0);
+  void print() {
+      if (root == NULL) {
+          sayl("The BST is empty.\n");
+      }
+      else {
+          threads(root);
+          printhelp();
+      }
   }
+
+  // Print the contents of the BST in order without recurssion
+  void printInOrder();
 };
-
-
-
-
 // Visit -- prints out root
+
 template <typename Key, typename E>
 void BST<Key, E>::vist(BSTNode<Key,E>* r) const {
     cout << "Node - " << r->element() << endl;
 }
-
 // Clean up BST by releasing space back free store
+
 template <typename Key, typename E>
 void BST<Key, E>::clearhelp(BSTNode<Key, E>* root) {
   if (root == NULL) return;
@@ -218,11 +139,9 @@ void BST<Key, E>::clearhelp(BSTNode<Key, E>* root) {
   clearhelp(root->right());
   delete root;
 }
-
 // Insert a node into the BST, returning the updated tree
 
 template <typename Key, typename E>
-
 void BST<Key, E>::inserthelp(const Key& k, const E& it) {
 
     if (root == NULL) { //the case where nothing exists
@@ -260,11 +179,11 @@ void BST<Key, E>::inserthelp(const Key& k, const E& it) {
         }
     }
 }
-
 // Delete the minimum value from the BST, returning the revised BST
+
 template <typename Key, typename E>
 BSTNode<Key, E>* BST<Key, E>::getmin(BSTNode<Key, E>* rt) {
-  if (!rt->left()) //jz
+  if (!rt->leftIsChild()) //jz
     return rt;
   else return getmin(rt->left());
 }
@@ -313,8 +232,7 @@ removehelp(BSTNode<Key, E>* rt, const Key& k) {
 
 // Find a node with the given key value
 template <typename Key, typename E>
-E* BST<Key, E>::findhelp(BSTNode<Key, E>* root,
-                              const Key& k) const {
+E* BST<Key, E>::findhelp(BSTNode<Key, E>* root, const Key& k) const {
   if (root == NULL) return NULL;          // Empty tree
   if (k < root->key())
     return findhelp(root->left(), k);   // Check left
@@ -327,55 +245,171 @@ E* BST<Key, E>::findhelp(BSTNode<Key, E>* root,
   }
 }
 
-// Print out a BST
+template <typename Key, typename E>
+BSTNode<Key, E>* BST<Key, E>::findPredessor(const Key& k) {
+    int key = (int)k;
+    if (root == NULL) {
+        return NULL;
+    }
+    BSTNode<Key, E>* currentNode = root;
+    BSTNode<Key, E>* predessor = NULL;
+    while (1) {
+        if (currentNode->key() > key) { //if current node is greater
+            if (currentNode->leftIsChild()) { //go to the left
+                if (currentNode->key() < key) {
+                    predessor = currentNode;
+                }
+                currentNode = currentNode->left();
+            }
+            else {
+                return predessor;
+            }
+        }
+        else { //else the node is smaller
+            if (currentNode->rightIsChild()) {
+                if (currentNode->key() < key) {
+                    predessor = currentNode;
+                }
+                currentNode = currentNode->right();
+            }
+            else {
+                return predessor;
+            }
+        }
+    }
+}
+
+template <typename Key, typename E>
+BSTNode<Key, E>* BST<Key, E>::findSuccessor(const Key& k) {
+    int key = (int)k;
+    if (root == NULL) {
+        return NULL; //tree doesnt exist, so terminate
+    }
+
+    BSTNode<Key, E>* currentNode = root;
+    BSTNode<Key, E>* successor = NULL;
+    while (1) {
+        if (currentNode->key() > key) {
+            if (currentNode->leftIsChild()) {
+                if (currentNode->key() > key) {
+                    successor = currentNode;
+                }
+                currentNode = currentNode->left();
+            }
+            else {
+                return successor;
+            }
+        }
+        else {
+            if (currentNode->rightIsChild()) {
+                if (currentNode->key() > key) {
+                    successor = currentNode;
+                }
+                currentNode = currentNode->right();
+            }
+            else {
+                return successor;
+            }
+        }
+    }
+}
+
+template <typename Key, typename E>
+void BST<Key, E>::threads(BSTNode<Key, E>* root) {
+    if (root->leftIsChild()) {
+        threads(root->left());
+    }
+    if (root->rightIsChild()) {
+        threads(root->right());
+    }
+    if (!root->leftIsChild()) {
+        root->setLeft(findPredessor(root->key()));
+    }
+    if (!root->rightIsChild()) {
+        root->setRight(findSuccessor(root->key()));
+    }
+}
+
+// Print out a BST (with recursion)
 template <typename Key, typename E>
 void BST<Key, E>::printhelp(BSTNode<Key, E>* root, int level) const {
-  if (root == NULL) return;           // Empty tree
-  if (root->leftIsChild()) {
-      printhelp(root->left(), level + 1);
-  }
-
-  
-  char spacer[] = "       ";
-  spacer[level] = '\0';
-  say(spacer);
-  say("-");
-  say(root->key());
-  say(" ");
-  say(root->element());
-  if (root->isLeaf()) {
-      say(" (leaf)");
-  }
-
-  if (root->key() == 90) {
-      int a = 0;
-  }
-  if (root->left() != NULL) {
-      if (!root->leftIsChild()) {
-          say(" predessor is ");
-          say(root->left()->key());
-      }
-  }
-  if (root->right() != NULL) {
-      if (!root->rightIsChild()) {
-          say(" successor is ");
-          say(root->right()->key());
-      }
-  }
-
-
-
-  say("\n");
-
-  /* //I don't know what this is
-  for (int i = 0; i < level; i++) {   // Indent to level
-      cout << "  ";
-      cout << root->key() << "\n";        // Print node value
-  }
-  */
-  if (root->rightIsChild()) {
-      printhelp(root->right(), level + 1);  // Do right subtree
-  }
+    if (root == NULL) return;           // Empty tree
+    if (root->leftIsChild()) {
+        printhelp(root->left(), level + 1);
+    }
+    char spacer[] = "       ";
+    spacer[level] = '\0';
+    say(spacer);
+    say("-");
+    say(root->key());
+    say(" ");
+    say(root->element());
+    if (root->isLeaf()) {
+        say(" (leaf)");
+    }
+    if (root->key() == 90) {
+        int a = 0;
+    }
+    if (root->left() != NULL) {
+        if (!root->leftIsChild()) {
+            say(" predessor is ");
+            say(root->left()->key());
+        }
+    }
+    if (root->right() != NULL) {
+        if (!root->rightIsChild()) {
+            say(" successor is ");
+            say(root->right()->key());
+        }
+    }
+    say("\n");
+    /* //I don't know what this is
+    for (int i = 0; i < level; i++) {   // Indent to level
+        cout << "  ";
+        cout << root->key() << "\n";        // Print node value
+    }
+    */
+    if (root->rightIsChild()) {
+        printhelp(root->right(), level + 1);  // Do right subtree
+    }
 }
+template <typename Key, typename E>
+void BST<Key, E>::printhelp() const {
+    printhelp(root, 0);
+}
+//Print out a BST (no recursion)
+template<typename Key, typename E>
+void BST<Key, E>::printInOrder() {
+    int i = 0;
+    BSTNode<Key, E>* nodesInOrder[16];
+    BSTNode<Key, E>* currentNode = getmin(root);
+    //nodesInOrder[i++] = currentNode;
+
+    while (i < nodecount) {
+        if (currentNode->rightIsChild()) {
+            if (!currentNode->leftIsChild()) {
+                nodesInOrder[i++] = currentNode;
+            }
+            currentNode = currentNode->right();
+            while (currentNode->leftIsChild()) {
+                currentNode = currentNode->left();
+            }
+        }
+        else {
+            nodesInOrder[i++] = currentNode;
+            if (currentNode->right() != NULL) {
+                if (!currentNode->rightIsChild()) {
+                    currentNode = currentNode->right();
+                    nodesInOrder[i++] = currentNode;
+                }
+            }
+        }
+    }
+
+    for (int j = 0; j < nodecount; j++) {
+        sayl(nodesInOrder[j]->element())
+    }
+}
+
 
 #endif
